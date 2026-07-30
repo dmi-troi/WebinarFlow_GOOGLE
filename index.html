@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebinarFlow - Eurokappa Academy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #e8f0fe;
+      color: #1a2332;
+      padding-bottom: 70px;
+    }
+
+    .task-reminder-time {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .task-reminder-time-input {
+      width: 80px;
+      padding: 4px 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+    }
+    .task-reminder-time-input:focus {
+      outline: none;
+      border-color: #2d4a7a;
+    }
+    .hint {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #0a1628 0%, #1a2332 50%, #2d4a7a 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .header h1 { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+    .header p { font-size: 12px; opacity: 0.9; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px; }
+    
+    .sync-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      opacity: 0.3;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .sync-icon:hover { opacity: 0.8; }
+    .sync-icon.active {
+      opacity: 1;
+      animation: spin 1.5s linear infinite;
+      color: #7baaf7;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.3s;
+    }
+    .nav-btn.active { color: #2d4a7a; font-weight: 600; }
+    .nav-btn .icon { font-size: 24px; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(10, 22, 40, 0.08);
+    }
+    .card h2 {
+      color: #2d4a7a;
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #2d4a7a 0%, #1a2332 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .stat-card.green { background: linear-gradient(135deg, #34a853 0%, #0d652d 100%); }
+    .stat-card.yellow { background: linear-gradient(135deg, #fbbc04 0%, #e37400 100%); }
+    .stat-card.red { background: linear-gradient(135deg, #ea4335 0%, #a50e0e 100%); }
+    .stat-card .number { font-size: 32px; font-weight: bold; }
+    .stat-card .label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+    
+    .item {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item:last-child { border-bottom: none; }
+    .item-title { font-weight: 600; margin-bottom: 4px; }
+    .item-meta { color: #666; font-size: 13px; }
+    
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-planned { background: #d2e3fc; color: #1967d2; }
+    .badge-done { background: #d9ead3; color: #137333; }
+    .badge-cancelled { background: #f4cccc; color: #c5221f; }
+    .badge-active { background: #d9ead3; color: #137333; }
+    
+    .btn {
+      background: linear-gradient(135deg, #2d4a7a 0%, #1a2332 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-danger { background: linear-gradient(135deg, #ea4335 0%, #a50e0e 100%); }
+    .btn-success { background: linear-gradient(135deg, #34a853 0%, #0d652d 100%); }
+    
+    .btn-small {
+      background: #2d4a7a;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: transform 0.2s;
+      white-space: nowrap;
+    }
+    .btn-small:hover { transform: translateY(-1px); }
+    .btn-small.btn-success { background: #34a853; }
+    .btn-small.btn-danger { background: #ea4335; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #1a2332;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #2d4a7a;
+    }
+    .form-group .hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .settings-section {
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e8f0fe;
+    }
+    .settings-section:last-child { border-bottom: none; }
+    .settings-section h3 {
+      color: #2d4a7a;
+      font-size: 16px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-label { flex: 1; }
+    .settings-label-title { font-weight: 600; font-size: 14px; color: #1a2332; }
+    .settings-label-desc { font-size: 12px; color: #666; margin-top: 2px; }
+    .settings-control { width: 120px; }
+    .settings-control input {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .settings-control input:focus { outline: none; border-color: #2d4a7a; }
+    .settings-control select {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #2d4a7a; }
+    input:checked + .slider:before { transform: translateX(22px); }
+    
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #2d4a7a;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    
+    .empty { text-align: center; padding: 40px; color: #999; }
+    .empty .icon { font-size: 48px; margin-bottom: 10px; }
+    
+    .page { display: none; }
+    .page.active { display: block; }
+    
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2d4a7a 0%, #1a2332 100%);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(45, 74, 122, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+      z-index: 50;
+    }
+    .fab:hover { transform: scale(1.1); }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 22, 40, 0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h2 { color: #2d4a7a; }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 300;
+      display: none;
+      animation: slideDown 0.3s;
+    }
+    .toast.success { background: #34a853; }
+    .toast.error { background: #ea4335; }
+    @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .calendar-header h2 { color: #2d4a7a; font-size: 20px; margin: 0; }
+    .calendar-nav { display: flex; gap: 10px; }
+    .calendar-nav button {
+      background: #2d4a7a;
+      color: white;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+    }
+    .calendar-nav button:hover { background: #1a2332; }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      color: #666;
+      padding: 8px 0;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .calendar-day:hover { background: #e8f0fe; transform: scale(1.05); }
+    .calendar-day.other-month { background: #f0f0f0; opacity: 0.5; }
+    .calendar-day.today { background: #2d4a7a; color: white; }
+    .calendar-day.today .day-number { color: white; font-weight: bold; }
+    .day-number { font-size: 14px; font-weight: 600; color: #1a2332; }
+    .day-events { margin-top: 2px; }
+    .day-event {
+      font-size: 9px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: white;
+    }
+    .day-event.webinar { background: #2d4a7a; }
+    .day-event.task-unisender { background: #34a853; }
+    .day-event.task-mtslink { background: #fbbc04; color: #333; }
+    .day-event.task-reminder { background: #ea4335; }
+    .day-event.task-event { background: #5b8def; }
+    .day-event.task-completed {
+      background: #34a853;
+      position: relative;
+    }
+    .day-event.task-completed::before {
+      content: '✓';
+      margin-right: 4px;
+      font-weight: bold;
+    }
+    
+    .calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+    
+    .day-modal-events { margin-top: 10px; }
+    .day-modal-event {
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #2d4a7a;
+    }
+    .day-modal-event.webinar { border-left-color: #2d4a7a; }
+    .day-modal-event.task { border-left-color: #5b8def; }
+    .day-modal-event-title { font-weight: 600; margin-bottom: 4px; }
+    .day-modal-event-meta { font-size: 12px; color: #666; }
+    
+    .task-owner-select, .task-status-select {
+      padding: 6px 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.3s;
+      min-width: 130px;
+    }
+    .task-owner-select:hover, .task-status-select:hover { border-color: #2d4a7a; }
+    .task-owner-select:focus, .task-status-select:focus { outline: none; border-color: #2d4a7a; }
+    
+    .task-date-input, .webinar-date-input {
+      padding: 4px 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+    .task-date-input:hover, .webinar-date-input:hover { border-color: #2d4a7a; }
+    .task-date-input:focus, .webinar-date-input:focus { outline: none; border-color: #2d4a7a; }
+    
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .task-item-content { flex: 1; min-width: 200px; }
+    .task-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    
+    .webinar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .archive-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e8f0fe;
+      padding-bottom: 10px;
+    }
+    .archive-tab {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .archive-tab.active {
+      color: #2d4a7a;
+      border-bottom-color: #2d4a7a;
+    }
+    .archive-tab:hover { color: #2d4a7a; }
+    
+    .fab-menu {
+      position: fixed;
+      bottom: 150px;
+      right: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 50;
+    }
+    .fab-menu.active { display: flex; }
+    .fab-menu-item {
+      background: white;
+      color: #2d4a7a;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s;
+      white-space: nowrap;
+    }
+    .fab-menu-item:hover { transform: translateX(-5px); }
+    .fab-menu-item .icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>📅 WebinarFlow</h1>
+    <p>Eurokappa Academy</p>
+    <div id="sync-icon" class="sync-icon" title="Нажмите для ручного обновления">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div id="page-dashboard" class="page active">
+    <div class="container">
+      <div class="card">
+        <h2>📊 Статистика</h2>
+        <div id="dashboard-stats" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка...</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2> Ближайшие задачи</h2>
+        <div id="dashboard-tasks" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEBINARS PAGE -->
+  <div id="page-webinars" class="page">
+    <div class="container">
+      <div class="card">
+        <h2>📅 Вебинары</h2>
+        <div id="webinars-list" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS PAGE -->
+  <div id="page-tasks" class="page">
+    <div class="container">
+      <div class="card">
+        <h2>📨 Задачи</h2>
+        <div id="tasks-list" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR PAGE -->
+  <div id="page-calendar" class="page">
+    <div class="container">
+      <div class="card">
+        <div class="calendar-header">
+          <h2 id="calendar-month-year">Загрузка...</h2>
+          <div class="calendar-nav">
+            <button onclick="changeMonth(-1)">‹</button>
+            <button onclick="changeMonth(0)">⦿</button>
+            <button onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div id="calendar-grid" class="calendar-grid">
+          <div class="loading" style="grid-column: 1/-1">
+            <div class="spinner"></div>
+            <p>Загрузка календаря...</p>
+          </div>
+        </div>
+        <div class="calendar-legend">
+          <div class="legend-item"><div class="legend-color" style="background: #2d4a7a"></div><span>Вебинар</span></div>
+          <div class="legend-item"><div class="legend-color" style="background: #34a853"></div><span>Юнисендер</span></div>
+          <div class="legend-item"><div class="legend-color" style="background: #fbbc04"></div><span>МТС Link</span></div>
+          <div class="legend-item"><div class="legend-color" style="background: #ea4335"></div><span>Напоминание</span></div>
+          <div class="legend-item"><div class="legend-color" style="background: #5b8def"></div><span>День мероприятия</span></div>
+          <div class="legend-item"><div class="legend-color" style="background: #34a853"></div><span>✓ Выполнено</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHIVE PAGE -->
+  <div id="page-archive" class="page">
+    <div class="container">
+      <div class="card">
+        <h2>📦 Архив</h2>
+        <div id="archive-content" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка архива...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div id="page-settings" class="page">
+    <div class="container">
+      <div class="card">
+        <h2>⚙️ Настройки системы</h2>
+        <div id="settings-content" class="loading">
+          <div class="spinner"></div>
+          <p>Загрузка настроек...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB Button -->
+  <button class="fab" onclick="toggleFabMenu()">+</button>
+
+  <!-- FAB Menu -->
+  <div id="fab-menu" class="fab-menu">
+    <button class="fab-menu-item" onclick="showNewWebinarModal(); closeFabMenu();">
+      <span class="icon">📅</span>
+      <span>Новый вебинар</span>
+    </button>
+    <button class="fab-menu-item" onclick="showNewTaskModal(); closeFabMenu();">
+      <span class="icon">📨</span>
+      <span>Новая задача</span>
+    </button>
+  </div>
+
+  <!-- NEW WEBINAR MODAL -->
+  <div id="modal-new-webinar" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>➕ Новый вебинар</h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Название *</label>
+        <input type="text" id="new-title" placeholder="Название вебинара">
+      </div>
+      <div class="form-group">
+        <label>Дата *</label>
+        <input type="date" id="new-date">
+      </div>
+      <div class="form-group">
+        <label>Ответственный *</label>
+        <select id="new-owner">
+          <option value="">Загрузка...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="new-email" placeholder="email@example.com">
+      </div>
+      <div class="form-group">
+        <label>Комментарий</label>
+        <input type="text" id="new-comment" placeholder="Дополнительная информация">
+      </div>
+      <button class="btn" onclick="createWebinar()">Создать вебинар</button>
+    </div>
+  </div>
+
+  <!-- NEW TASK MODAL -->
+  <div id="modal-new-task" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📨 Новая задача</h2>
+        <button class="modal-close" onclick="closeTaskModal()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Тип задачи *</label>
+        <select id="task-type">
+          <option value="">— Выберите тип —</option>
+          <option value="Юнисендер">Юнисендер</option>
+          <option value="МТС Link">МТС Link</option>
+          <option value="Напоминание">Напоминание</option>
+          <option value="День мероприятия">День мероприятия</option>
+          <option value="Другое">Другое</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Название / Описание *</label>
+        <input type="text" id="task-title" placeholder="Описание задачи">
+      </div>
+      <div class="form-group">
+        <label>Дата выполнения *</label>
+        <input type="date" id="task-date">
+      </div>
+      <div class="form-group">
+        <label>Ответственный *</label>
+        <select id="task-owner">
+          <option value="">— Выберите —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Привязать к вебинару (необязательно)</label>
+        <select id="task-webinar">
+          <option value="">— Не привязывать —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Статус</label>
+        <select id="task-status">
+          <option value="Запланировано">Запланировано</option>
+          <option value="Выполнено">Выполнено</option>
+          <option value="Отменено">Отменено</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>⏰ Время напоминания в Telegram</label>
+        <input type="time" id="task-reminder-time">
+        <div class="hint">Бот напомнит о задаче в это время (необязательно)</div>
+      </div>
+      <div class="form-group">
+        <label>Примечание</label>
+        <input type="text" id="task-notes" placeholder="Дополнительная информация">
+      </div>
+      <button class="btn" onclick="createTask()">Создать задачу</button>
+    </div>
+  </div>
+
+  <!-- DAY DETAILS MODAL -->
+  <div id="modal-day-details" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="day-details-title">Детали дня</h2>
+        <button class="modal-close" onclick="closeDayModal()">×</button>
+      </div>
+      <div id="day-details-content">
+        <p>Загрузка...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <!-- NAVIGATION -->
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('dashboard', this)">
+      <span class="icon">📊</span>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('webinars', this)">
+      <span class="icon">📅</span>
+      <span>Вебинары</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('tasks', this)">
+      <span class="icon">📨</span>
+      <span>Задачи</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('calendar', this)">
+      <span class="icon">📆</span>
+      <span>Календарь</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('archive', this)">
+      <span class="icon"></span>
+      <span>Архив</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('settings', this)">
+      <span class="icon">️</span>
+      <span>Настройки</span>
+    </button>
+  </div>
+
+  <script>
+    // ========================================================
+    // ПЕРЕМЕННЫЕ
+    // ========================================================
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+    let calendarData = null;
+    let currentSettings = null;
+    let cachedResponsibles = [];
+    let cachedWebinars = [];
+    let archiveData = null;
+    let currentArchiveTab = 'webinars';
+
+    // ========================================================
+    // NAVIGATION
+    // ========================================================
+    function showPage(page, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      if (page === 'dashboard') loadDashboard();
+      if (page === 'webinars') loadWebinars();
+      if (page === 'tasks') loadTasks();
+      if (page === 'calendar') loadCalendar();
+      if (page === 'archive') loadArchive();
+      if (page === 'settings') loadSettings();
+    }
+
+    // ========================================================
+    // FAB MENU
+    // ========================================================
+    function toggleFabMenu() {
+      const menu = document.getElementById('fab-menu');
+      menu.classList.toggle('active');
+    }
+    function closeFabMenu() {
+      document.getElementById('fab-menu').classList.remove('active');
+    }
+
+    // ========================================================
+    // СИНХРОНИЗАЦИЯ
+    // ========================================================
+    let isSyncing = false;
+    function startSync() {
+      if (isSyncing) return;
+      isSyncing = true;
+      document.getElementById('sync-icon').classList.add('active');
+    }
+    function stopSync() {
+      isSyncing = false;
+      document.getElementById('sync-icon').classList.remove('active');
+    }
+
+    // ========================================================
+    // ОТВЕТСТВЕННЫЕ И ВЕБИНАРЫ
+    // ========================================================
+    function loadResponsiblesCache(callback) {
+      if (cachedResponsibles.length > 0) {
+        callback(cachedResponsibles);
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result && !result.error && Array.isArray(result)) {
+            cachedResponsibles = result;
+          }
+          callback(cachedResponsibles);
+        })
+        .withFailureHandler(function(err) {
+          console.error('Ошибка загрузки ответственных:', err);
+          callback([]);
+        })
+        .apiGetResponsiblesList();
+    }
+
+    function loadWebinarsCache(callback) {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result && !result.error && Array.isArray(result)) {
+            cachedWebinars = result;
+          }
+          callback(cachedWebinars);
+        })
+        .withFailureHandler(function(err) {
+          console.error('Ошибка загрузки вебинаров:', err);
+          callback([]);
+        })
+        .apiGetWebinars();
+    }
+
+    // ========================================================
+    // DASHBOARD
+    // ========================================================
+    function loadDashboard() {
+      console.log('🔄 Загрузка Dashboard...');
+      startSync();
+      google.script.run
+        .withSuccessHandler(function(data) {
+          stopSync();
+          console.log('✅ Dashboard получен:', data);
+          if (data.error) {
+            document.getElementById('dashboard-stats').innerHTML = '<p style="color:red">' + data.error + '</p>';
+            return;
+          }
+          const stats = data.webinars;
+          const tasks = data.tasks;
+          document.getElementById('dashboard-stats').innerHTML = `
+            <div class="stats-grid">
+              <div class="stat-card"><div class="number">${stats.total}</div><div class="label">Вебинаров</div></div>
+              <div class="stat-card green"><div class="number">${stats.active}</div><div class="label">Активных</div></div>
+              <div class="stat-card yellow"><div class="number">${tasks.total}</div><div class="label">Задач</div></div>
+              <div class="stat-card red"><div class="number">${tasks.today}</div><div class="label">На сегодня</div></div>
+            </div>`;
+          const nextTasks = data.nextTasks || [];
+          if (nextTasks.length === 0) {
+            document.getElementById('dashboard-tasks').innerHTML = '<div class="empty"><div class="icon">✅</div><p>Нет ближайших задач</p></div>';
+          } else {
+            let html = '';
+            nextTasks.forEach(t => {
+              const date = t.plannedDate ? new Date(t.plannedDate).toLocaleDateString('ru-RU') : '—';
+              html += `<div class="item"><div><div class="item-title">${t.type}</div><div class="item-meta">${t.webinarTitle || 'Отдельная задача'}</div><div class="item-meta">📆 ${date} | 👤 ${t.owner}</div></div></div>`;
+            });
+            document.getElementById('dashboard-tasks').innerHTML = html;
+          }
+        })
+        .withFailureHandler(function(err) {
+          stopSync();
+          console.error('❌ Ошибка Dashboard:', err);
+        })
+        .apiGetDashboard();
+    }
+
+    // ========================================================
+    // WEBINARS
+    // ========================================================
+    function loadWebinars() {
+      console.log('🔄 Загрузка вебинаров...');
+      startSync();
+      google.script.run
+        .withSuccessHandler(function(webinars) {
+          stopSync();
+          console.log('✅ Вебинары получены:', webinars);
+          if (webinars.error) {
+            document.getElementById('webinars-list').innerHTML = '<p style="color:red">' + webinars.error + '</p>';
+            return;
+          }
+          if (webinars.length === 0) {
+            document.getElementById('webinars-list').innerHTML = '<div class="empty"><div class="icon">📅</div><p>Нет вебинаров</p><p style="font-size:14px;margin-top:10px">Нажмите + чтобы добавить</p></div>';
+            return;
+          }
+          let html = '';
+          webinars.forEach(w => {
+            const date = w.date ? new Date(w.date).toLocaleDateString('ru-RU') : '—';
+            const statusClass = 'badge-' + w.status.toLowerCase();
+            const dateInput = w.date ? `<input type="date" class="webinar-date-input" data-webinar-id="${w.id}" value="${w.date}">` : '';
+            html += `<div class="item webinar-item">
+              <div style="flex:1">
+                <div class="item-title">${w.title}</div>
+                <div class="item-meta">📆 ${dateInput} | 👤 ${w.owner}</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge ${statusClass}">${w.status}</span>
+                ${w.status !== 'Проведён' ? `<button class="btn-small btn-success" onclick="completeWebinar('${w.id}')">✓ Завершить</button>` : ''}
+                <button class="btn-small btn-danger" onclick="archiveWebinar('${w.id}')">📦</button>
+              </div>
+            </div>`;
+          });
+          document.getElementById('webinars-list').innerHTML = html;
+          setTimeout(function() {
+            document.querySelectorAll('.webinar-date-input').forEach(function(input) {
+              input.addEventListener('change', function() {
+                updateWebinarDate(this.dataset.webinarId, this.value);
+              });
+            });
+          }, 100);
+        })
+        .withFailureHandler(function(err) {
+          stopSync();
+          console.error('❌ Ошибка вебинаров:', err);
+        })
+        .apiGetWebinars();
+    }
+
+    function updateWebinarDate(webinarId, newDate) {
+      console.log('🔄 Обновление даты вебинара:', webinarId, newDate);
+      showToast('💾 Сохранение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Дата обновлена, задачи пересчитаны', 'success');
+            loadWebinars();
+            loadCalendar();
+            loadTasks();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiUpdateWebinarDate(webinarId, newDate);
+    }
+
+    function completeWebinar(webinarId) {
+      if (!confirm('Завершить этот вебинар? Задачи будут архивированы.')) return;
+      showToast('⏳ Завершение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Вебинар завершён', 'success');
+            loadWebinars();
+            loadDashboard();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiCompleteWebinar(webinarId);
+    }
+
+    function archiveWebinar(webinarId) {
+      if (!confirm('Архивировать этот вебинар?')) return;
+      showToast('📦 Архивация...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Вебинар архивирован', 'success');
+            loadWebinars();
+            loadDashboard();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiArchiveWebinar(webinarId);
+    }
+
+    // ========================================================
+    // TASKS - ИСПРАВЛЕННАЯ ФУНКЦИЯ
+    // ========================================================
+    function loadTasks() {
+      console.log('🔄 Загрузка задач...');
+      startSync();
+      loadResponsiblesCache(function(responsibles) {
+        console.log('Ответственных загружено:', responsibles.length);
+        google.script.run
+          .withSuccessHandler(function(tasks) {
+            stopSync();
+            console.log('✅ Задачи получены:', tasks);
+            if (tasks.error) {
+              document.getElementById('tasks-list').innerHTML = '<p style="color:red">' + tasks.error + '</p>';
+              return;
+            }
+            if (tasks.length === 0) {
+              document.getElementById('tasks-list').innerHTML = '<div class="empty"><div class="icon">📨</div><p>Нет задач</p></div>';
+              return;
+            }
+            let html = '';
+            tasks.slice(0, 50).forEach(t => {
+              const date = t.plannedDate ? new Date(t.plannedDate).toLocaleDateString('ru-RU') : '—';
+              const statusClass = 'badge-' + t.status.toLowerCase();
+              let ownerSelect = '<select class="task-owner-select" data-task-id="' + t.id + '">';
+              ownerSelect += '<option value="">— Не назначен —</option>';
+              responsibles.forEach(function(r) {
+                const selected = r.name === t.owner ? 'selected' : '';
+                ownerSelect += '<option value="' + r.name + '" ' + selected + '>' + r.name + '</option>';
+              });
+              ownerSelect += '</select>';
+              let statusSelect = '<select class="task-status-select" data-task-id="' + t.id + '">';
+              ['Запланировано', 'Выполнено', 'Отменено'].forEach(function(s) {
+                const selected = s === t.status ? 'selected' : '';
+                statusSelect += '<option value="' + s + '" ' + selected + '>' + s + '</option>';
+              });
+              statusSelect += '</select>';
+              const dateInput = t.plannedDate ? `<input type="date" class="task-date-input" data-task-id="${t.id}" value="${t.plannedDate}">` : '';
+              
+              // ИСПРАВЛЕНО: Убран лишний webinarLabel
+              const taskTitle = t.webinarTitle ? (t.type + ': ' + t.webinarTitle) : t.type;
+              
+              html += '<div class="item task-item">' +
+                '<div class="task-item-content">' +
+                  '<div class="item-title">' + taskTitle + '</div>' +
+                  '<div class="item-meta">📆 ' + dateInput + 
+                    (t.owner ? ' | 👤 ' + t.owner : '') + 
+                  '</div>' +
+                  '<div class="task-reminder-time">' +
+                    '<input type="time" class="task-reminder-time-input" data-task-id="' + t.id + '" value="' + (t.reminderTime || '') + '">' +
+                    '<div class="hint">Время напоминания</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="task-controls">' +
+                  ownerSelect +
+                  statusSelect +
+                  '<span class="badge ' + statusClass + '">' + t.status + '</span>' +
+                  '<button class="btn-small btn-danger" onclick="archiveTask(\'' + t.id + '\')"></button>' +
+                '</div>' +
+              '</div>';
+            });
+            document.getElementById('tasks-list').innerHTML = html;
+            
+            setTimeout(function() {
+              document.querySelectorAll('.task-owner-select').forEach(function(select) {
+                select.addEventListener('change', function() {
+                  updateTaskResponsible(this.dataset.taskId, this.value);
+                });
+              });
+              document.querySelectorAll('.task-status-select').forEach(function(select) {
+                select.addEventListener('change', function() {
+                  updateTaskStatus(this.dataset.taskId, this.value);
+                });
+              });
+              document.querySelectorAll('.task-date-input').forEach(function(input) {
+                input.addEventListener('change', function() {
+                  updateTaskDate(this.dataset.taskId, this.value);
+                });
+              });
+              document.querySelectorAll('.task-reminder-time-input').forEach(function(input) {
+                input.addEventListener('change', function() {
+                  updateTaskReminderTime(this.dataset.taskId, this.value);
+                });
+              });
+            }, 100);
+          })
+          .withFailureHandler(function(err) {
+            stopSync();
+            console.error('❌ Ошибка задач:', err);
+          })
+          .apiGetTasks();
+      });
+    }
+
+    function updateTaskResponsible(taskId, newOwner) {
+      console.log('🔄 Обновление ответственного:', taskId, newOwner);
+      showToast('💾 Сохранение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else showToast('✅ Ответственный обновлён', 'success');
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiUpdateTaskResponsible(taskId, newOwner);
+    }
+
+    function updateTaskStatus(taskId, newStatus) {
+      console.log('🔄 Обновление статуса:', taskId, newStatus);
+      showToast('💾 Сохранение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Статус обновлён: ' + newStatus, 'success');
+            loadTasks();
+            loadDashboard();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiUpdateTaskStatus(taskId, newStatus);
+    }
+
+    function updateTaskDate(taskId, newDate) {
+      console.log('🔄 Обновление даты:', taskId, newDate);
+      showToast('💾 Сохранение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Дата обновлена', 'success');
+            loadTasks();
+            loadCalendar();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiUpdateTaskDate(taskId, newDate);
+    }
+    
+    function updateTaskReminderTime(taskId, reminderTime) {
+      console.log('🔄 Обновление времени напоминания:', taskId, reminderTime);
+      showToast('⏰ Обновление времени...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else showToast('✅ Время напоминания обновлено', 'success');
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiUpdateTaskReminderTime(taskId, reminderTime);
+    }
+
+    function archiveTask(taskId) {
+      if (!confirm('Архивировать эту задачу?')) return;
+      showToast('📦 Архивация...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Задача архивирована', 'success');
+            loadTasks();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiArchiveTask(taskId);
+    }
+
+    // ========================================================
+    // CALENDAR
+    // ========================================================
+    function loadCalendar() {
+      console.log(' Загрузка календаря...');
+      startSync();
+      google.script.run
+        .withSuccessHandler(function(data) {
+          stopSync();
+          console.log('✅ Календарь получен:', data);
+          if (data.error) {
+            document.getElementById('calendar-grid').innerHTML = '<p style="color:red">' + data.error + '</p>';
+            return;
+          }
+          calendarData = data;
+          renderCalendar();
+        })
+        .withFailureHandler(function(err) {
+          stopSync();
+          console.error('❌ Ошибка календаря:', err);
+        })
+        .apiGetCalendarData(currentYear, currentMonth);
+    }
+
+    function renderCalendar() {
+      if (!calendarData) return;
+      const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+      const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+      document.getElementById('calendar-month-year').textContent = monthNames[currentMonth - 1] + ' ' + currentYear;
+      const firstDay = new Date(currentYear, currentMonth - 1, 1);
+      const lastDay = new Date(currentYear, currentMonth, 0);
+      const daysInMonth = lastDay.getDate();
+      let startDayOfWeek = firstDay.getDay();
+      if (startDayOfWeek === 0) startDayOfWeek = 7;
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      let html = '';
+      dayNames.forEach(day => { html += `<div class="calendar-day-header">${day}</div>`; });
+      for (let i = 1; i < startDayOfWeek; i++) {
+        const prevMonthDay = new Date(currentYear, currentMonth - 1, 0).getDate() - startDayOfWeek + i + 1;
+        html += `<div class="calendar-day other-month"><div class="day-number">${prevMonthDay}</div></div>`;
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        const dayEvents = calendarData.events.filter(e => e.date === dateStr);
+        let eventsHtml = '';
+        dayEvents.slice(0, 3).forEach(event => {
+          let eventClass = 'day-event';
+          if (event.type === 'webinar') eventClass += ' webinar';
+          else if (event.type === 'task') {
+            if (event.completed) eventClass += ' task-completed';
+            else if (event.title.includes('Юнисендер')) eventClass += ' task-unisender';
+            else if (event.title.includes('МТС Link')) eventClass += ' task-mtslink';
+            else if (event.title.includes('Напоминание')) eventClass += ' task-reminder';
+            else eventClass += ' task-event';
+          }
+          const icon = event.completed ? '✓ ' : '';
+          eventsHtml += `<div class="${eventClass}" title="${event.title}">${icon}${event.title.split(':')[0]}</div>`;
+        });
+        if (dayEvents.length > 3) eventsHtml += `<div style="font-size:9px;color:#666">+${dayEvents.length - 3} ещё</div>`;
+        html += `<div class="calendar-day ${isToday ? 'today' : ''}" onclick="showDayDetails('${dateStr}')"><div class="day-number">${day}</div><div class="day-events">${eventsHtml}</div></div>`;
+      }
+      const totalCells = startDayOfWeek - 1 + daysInMonth;
+      const remainingCells = 42 - totalCells;
+      for (let i = 1; i <= remainingCells && i <= 7; i++) {
+        html += `<div class="calendar-day other-month"><div class="day-number">${i}</div></div>`;
+      }
+      document.getElementById('calendar-grid').innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      if (delta === 0) { currentYear = new Date().getFullYear(); currentMonth = new Date().getMonth() + 1; }
+      else {
+        currentMonth += delta;
+        if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+        else if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      }
+      loadCalendar();
+    }
+
+    function showDayDetails(dateStr) {
+      if (!calendarData) return;
+      const dayEvents = calendarData.events.filter(e => e.date === dateStr);
+      const date = new Date(dateStr);
+      const dateFormatted = date.toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('day-details-title').textContent = dateFormatted;
+      if (dayEvents.length === 0) {
+        document.getElementById('day-details-content').innerHTML = '<div class="empty"><div class="icon">📭</div><p>Нет событий</p></div>';
+      } else {
+        let html = '<div class="day-modal-events">';
+        dayEvents.forEach(event => {
+          const typeClass = event.type === 'webinar' ? 'webinar' : 'task';
+          const completedIcon = event.completed ? ' ✅' : '';
+          html += `<div class="day-modal-event ${typeClass}"><div class="day-modal-event-title">${event.title}${completedIcon}</div><div class="day-modal-event-meta">👤 ${event.owner} | ${event.type === 'webinar' ? '📅 Вебинар' : '📨 Задача'}</div></div>`;
+        });
+        html += '</div>';
+        document.getElementById('day-details-content').innerHTML = html;
+      }
+      document.getElementById('modal-day-details').classList.add('active');
+    }
+
+    function closeDayModal() { document.getElementById('modal-day-details').classList.remove('active'); }
+
+    // ========================================================
+    // ARCHIVE
+    // ========================================================
+    function loadArchive() {
+      console.log('🔄 Загрузка архива...');
+      startSync();
+      google.script.run
+        .withSuccessHandler(function(data) {
+          stopSync();
+          console.log('✅ Архив получен:', data);
+          if (data.error) {
+            document.getElementById('archive-content').innerHTML = '<p style="color:red">' + data.error + '</p>';
+            return;
+          }
+          archiveData = data;
+          renderArchive();
+        })
+        .withFailureHandler(function(err) {
+          stopSync();
+          console.error('❌ Ошибка архива:', err);
+        })
+        .apiGetArchive();
+    }
+
+    function renderArchive() {
+      if (!archiveData) return;
+      const webinars = archiveData.webinars || [];
+      const tasks = archiveData.tasks || [];
+      let html = `
+        <div class="archive-tabs">
+          <button class="archive-tab ${currentArchiveTab === 'webinars' ? 'active' : ''}" onclick="switchArchiveTab('webinars')">📅 Вебинары (${webinars.length})</button>
+          <button class="archive-tab ${currentArchiveTab === 'tasks' ? 'active' : ''}" onclick="switchArchiveTab('tasks')">📨 Задачи (${tasks.length})</button>
+        </div>
+        <div id="archive-tab-content"></div>
+      `;
+      document.getElementById('archive-content').innerHTML = html;
+      if (currentArchiveTab === 'webinars') {
+        renderArchiveWebinars(webinars);
+      } else {
+        renderArchiveTasks(tasks);
+      }
+    }
+
+    function switchArchiveTab(tab) {
+      currentArchiveTab = tab;
+      renderArchive();
+    }
+
+    function renderArchiveWebinars(webinars) {
+      const content = document.getElementById('archive-tab-content');
+      if (webinars.length === 0) {
+        content.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Архив пуст</p></div>';
+        return;
+      }
+      let html = '';
+      webinars.forEach(w => {
+        const date = w.date ? new Date(w.date).toLocaleDateString('ru-RU') : '—';
+        html += `<div class="item">
+          <div style="flex:1">
+            <div class="item-title">${w.title}</div>
+            <div class="item-meta">📆 ${date} | 👤 ${w.owner}</div>
+          </div>
+          <button class="btn-small btn-success" onclick="restoreWebinar('${w.id}')">↩️ Восстановить</button>
+        </div>`;
+      });
+      content.innerHTML = html;
+    }
+
+    function renderArchiveTasks(tasks) {
+      const content = document.getElementById('archive-tab-content');
+      if (tasks.length === 0) {
+        content.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Архив пуст</p></div>';
+        return;
+      }
+      let html = '';
+      tasks.forEach(t => {
+        const date = t.plannedDate ? new Date(t.plannedDate).toLocaleDateString('ru-RU') : '—';
+        html += `<div class="item">
+          <div style="flex:1">
+            <div class="item-title">${t.type}: ${t.webinarTitle || 'Отдельная задача'}</div>
+            <div class="item-meta"> ${date} | 👤 ${t.owner}</div>
+          </div>
+          <span class="badge badge-done">${t.status}</span>
+          <button class="btn-small btn-success" onclick="restoreTask('${t.id}')">↩️ Восстановить</button>
+        </div>`;
+      });
+      content.innerHTML = html;
+    }
+
+    function restoreWebinar(webinarId) {
+      if (!confirm('Восстановить этот вебинар?')) return;
+      showToast('↩️ Восстановление...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Вебинар восстановлен', 'success');
+            loadArchive();
+            loadWebinars();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiRestoreWebinar(webinarId);
+    }
+
+    function restoreTask(taskId) {
+      if (!confirm('Восстановить эту задачу?')) return;
+      showToast('↩️ Восстановление...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Задача восстановлена', 'success');
+            loadArchive();
+            loadTasks();
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiRestoreTask(taskId);
+    }
+
+    // ========================================================
+    // SETTINGS
+    // ========================================================
+    function loadSettings() {
+      console.log('🔄 Загрузка настроек...');
+      startSync();
+      google.script.run
+        .withSuccessHandler(function(settings) {
+          stopSync();
+          console.log('✅ Настройки получены:', settings);
+          if (settings.error) {
+            document.getElementById('settings-content').innerHTML = '<p style="color:red">' + settings.error + '</p>';
+            return;
+          }
+          currentSettings = settings;
+          renderSettings(settings);
+        })
+        .withFailureHandler(function(err) {
+          stopSync();
+          console.error('❌ Ошибка настроек:', err);
+        })
+        .apiGetAppSettings();
+    }
+
+    function renderSettings(settings) {
+      const html = `
+        <div class="settings-section">
+          <h3>⏰ Периоды напоминаний (дней до вебинара)</h3>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Юнисендер</div><div class="settings-label-desc">За сколько дней отправлять рассылку</div></div><div class="settings-control"><input type="number" id="setting-days-unisender" value="${settings.DAYS_BEFORE_UNISENDER}" min="0" max="60"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">МТС Link</div><div class="settings-label-desc">За сколько дней отправлять ссылку</div></div><div class="settings-control"><input type="number" id="setting-days-mtslink" value="${settings.DAYS_BEFORE_MTSLINK}" min="0" max="60"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Напоминание</div><div class="settings-label-desc">За сколько дней напоминать</div></div><div class="settings-control"><input type="number" id="setting-days-reminder" value="${settings.DAYS_BEFORE_REMINDER}" min="0" max="60"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">День мероприятия</div><div class="settings-label-desc">День вебинара (обычно 0)</div></div><div class="settings-control"><input type="number" id="setting-days-event" value="${settings.DAYS_BEFORE_EVENT}" min="0" max="60"></div></div>
+        </div>
+        <div class="settings-section">
+          <h3>🏷️ Названия типов задач</h3>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Тип 1</div><div class="settings-label-desc">Первая рассылка</div></div><div class="settings-control"><input type="text" id="setting-name-unisender" value="${settings.TASK_TYPE_UNISENDER}" maxlength="30"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Тип 2</div><div class="settings-label-desc">Вторая рассылка</div></div><div class="settings-control"><input type="text" id="setting-name-mtslink" value="${settings.TASK_TYPE_MTSLINK}" maxlength="30"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Тип 3</div><div class="settings-label-desc">Напоминание</div></div><div class="settings-control"><input type="text" id="setting-name-reminder" value="${settings.TASK_TYPE_REMINDER}" maxlength="30"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Тип 4</div><div class="settings-label-desc">День мероприятия</div></div><div class="settings-control"><input type="text" id="setting-name-event" value="${settings.TASK_TYPE_EVENT}" maxlength="30"></div></div>
+        </div>
+        <div class="settings-section">
+          <h3>⚙️ Дополнительные настройки</h3>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Направление переноса</div><div class="settings-label-desc">Куда сдвигать задачи при конфликте дат</div></div><div class="settings-control"><select id="setting-shift-direction"><option value="backward" ${settings.SHIFT_DIRECTION === 'backward' ? 'selected' : ''}>Назад</option><option value="forward" ${settings.SHIFT_DIRECTION === 'forward' ? 'selected' : ''}>Вперёд</option></select></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Максимальный сдвиг</div><div class="settings-label-desc">Максимум дней для переноса</div></div><div class="settings-control"><input type="number" id="setting-max-shift" value="${settings.MAX_SHIFT_DAYS}" min="1" max="30"></div></div>
+          <div class="settings-row"><div class="settings-label"><div class="settings-label-title">Автопересчёт</div><div class="settings-label-desc">Автоматически пересчитывать задачи</div></div><div class="settings-control"><label class="toggle"><input type="checkbox" id="setting-auto-recalculate" ${settings.AUTO_RECALCULATE ? 'checked' : ''}><span class="slider"></span></label></div></div>
+        </div>
+        <button class="btn btn-success" onclick="saveSettings()">💾 Сохранить настройки</button>`;
+      document.getElementById('settings-content').innerHTML = html;
+    }
+
+    function saveSettings() {
+      const settings = {
+        DAYS_BEFORE_UNISENDER: parseInt(document.getElementById('setting-days-unisender').value) || 14,
+        DAYS_BEFORE_MTSLINK: parseInt(document.getElementById('setting-days-mtslink').value) || 7,
+        DAYS_BEFORE_REMINDER: parseInt(document.getElementById('setting-days-reminder').value) || 3,
+        DAYS_BEFORE_EVENT: parseInt(document.getElementById('setting-days-event').value) || 0,
+        TASK_TYPE_UNISENDER: document.getElementById('setting-name-unisender').value.trim() || 'Юнисендер',
+        TASK_TYPE_MTSLINK: document.getElementById('setting-name-mtslink').value.trim() || 'МТС Link',
+        TASK_TYPE_REMINDER: document.getElementById('setting-name-reminder').value.trim() || 'Напоминание',
+        TASK_TYPE_EVENT: document.getElementById('setting-name-event').value.trim() || 'День мероприятия',
+        SHIFT_DIRECTION: document.getElementById('setting-shift-direction').value,
+        MAX_SHIFT_DAYS: parseInt(document.getElementById('setting-max-shift').value) || 14,
+        AUTO_RECALCULATE: document.getElementById('setting-auto-recalculate').checked
+      };
+      console.log('Сохранение настроек:', settings);
+      showToast('💾 Сохранение...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Результат сохранения:', result);
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Настройки сохранены!', 'success');
+            currentSettings = settings;
+            setTimeout(function() { loadDashboard(); loadCalendar(); loadTasks(); }, 1000);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Ошибка сохранения:', err);
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiSaveAppSettings(settings);
+    }
+
+    // ========================================================
+    // NEW WEBINAR
+    // ========================================================
+    function showNewWebinarModal() {
+      document.getElementById('modal-new-webinar').classList.add('active');
+      loadOwners();
+    }
+    function closeModal() { document.getElementById('modal-new-webinar').classList.remove('active'); }
+    function loadOwners() {
+      loadResponsiblesCache(function(responsibles) {
+        const select = document.getElementById('new-owner');
+        select.innerHTML = '<option value="">— Выберите —</option>';
+        if (responsibles && responsibles.length > 0) {
+          responsibles.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.name;
+            opt.textContent = o.name;
+            opt.dataset.email = o.email || '';
+            select.appendChild(opt);
+          });
+        }
+      });
+    }
+    document.getElementById('new-owner').addEventListener('change', function() {
+      const selected = this.options[this.selectedIndex];
+      if (selected && selected.dataset.email) document.getElementById('new-email').value = selected.dataset.email;
+    });
+    function createWebinar() {
+      const data = {
+        title: document.getElementById('new-title').value.trim(),
+        date: document.getElementById('new-date').value,
+        owner: document.getElementById('new-owner').value,
+        email: document.getElementById('new-email').value.trim(),
+        comment: document.getElementById('new-comment').value.trim()
+      };
+      console.log('Отправка данных вебинара:', data);
+      if (!data.title || !data.date || !data.owner) { showToast('❌ Заполните обязательные поля', 'error'); return; }
+      showToast('⏳ Создание...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Результат создания вебинара:', result);
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Вебинар создан!', 'success');
+            closeModal();
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-date').value = '';
+            document.getElementById('new-owner').value = '';
+            document.getElementById('new-email').value = '';
+            document.getElementById('new-comment').value = '';
+            setTimeout(function() { loadWebinars(); loadDashboard(); loadCalendar(); loadTasks(); }, 500);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Ошибка сервера при создании:', err);
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiCreateWebinar(data);
+    }
+
+    // ========================================================
+    // NEW TASK (ОТДЕЛЬНАЯ ЗАДАЧА)
+    // ========================================================
+    function showNewTaskModal() {
+      document.getElementById('modal-new-task').classList.add('active');
+      loadTaskOwners();
+      loadTaskWebinars();
+    }
+    function closeTaskModal() { document.getElementById('modal-new-task').classList.remove('active'); }
+    
+    function loadTaskOwners() {
+      loadResponsiblesCache(function(responsibles) {
+        const select = document.getElementById('task-owner');
+        select.innerHTML = '<option value="">— Выберите —</option>';
+        if (responsibles && responsibles.length > 0) {
+          responsibles.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.name;
+            opt.textContent = o.name;
+            opt.dataset.email = o.email || '';
+            select.appendChild(opt);
+          });
+        }
+      });
+    }
+    
+    function loadTaskWebinars() {
+      loadWebinarsCache(function(webinars) {
+        const select = document.getElementById('task-webinar');
+        select.innerHTML = '<option value="">— Не привязывать —</option>';
+        if (webinars && webinars.length > 0) {
+          webinars.forEach(w => {
+            const opt = document.createElement('option');
+            opt.value = w.id;
+            opt.textContent = w.title;
+            opt.dataset.title = w.title;
+            select.appendChild(opt);
+          });
+        }
+      });
+    }
+    
+    document.getElementById('task-owner').addEventListener('change', function() {
+      const selected = this.options[this.selectedIndex];
+      if (selected && selected.dataset.email) {
+        // Email можно использовать если нужно
+      }
+    });
+    
+    function createTask() {
+      const webinarSelect = document.getElementById('task-webinar');
+      const webinarId = webinarSelect.value;
+      const webinarTitle = webinarSelect.options[webinarSelect.selectedIndex]?.dataset.title || '';
+      
+      const data = {
+        type: document.getElementById('task-type').value.trim(),
+        title: document.getElementById('task-title').value.trim(),
+        plannedDate: document.getElementById('task-date').value,
+        owner: document.getElementById('task-owner').value,
+        webinarId: webinarId,
+        webinarTitle: webinarTitle,
+        status: document.getElementById('task-status').value,
+        notes: document.getElementById('task-notes').value.trim(),
+        reminderTime: document.getElementById('task-reminder-time').value
+      };
+      
+      console.log('Отправка данных задачи:', data);
+      
+      if (!data.type || !data.plannedDate || !data.owner) {
+        showToast('❌ Заполните тип, дату и ответственного', 'error');
+        return;
+      }
+      
+      // Если есть название задачи, добавляем его к типу
+      if (data.title) {
+        data.type = data.type + ': ' + data.title;
+      }
+      
+      showToast('⏳ Создание задачи...', 'success');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Результат создания задачи:', result);
+          if (result.error) showToast('❌ Ошибка: ' + result.error, 'error');
+          else {
+            showToast('✅ Задача создана!', 'success');
+            closeTaskModal();
+            // Очищаем форму
+            document.getElementById('task-type').value = '';
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-date').value = '';
+            document.getElementById('task-owner').value = '';
+            document.getElementById('task-webinar').value = '';
+            document.getElementById('task-status').value = 'Запланировано';
+            document.getElementById('task-reminder-time').value = '';
+            document.getElementById('task-notes').value = '';
+            // Обновляем данные
+            setTimeout(function() { loadTasks(); loadDashboard(); loadCalendar(); }, 500);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Ошибка сервера при создании задачи:', err);
+          showToast('❌ Ошибка: ' + err.message, 'error');
+        })
+        .apiCreateTask(data);
+    }
+
+    // ========================================================
+    // TOAST
+    // ========================================================
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    // ========================================================
+    // АВТООБНОВЛЕНИЕ
+    // ========================================================
+    setInterval(function() {
+      const activePage = document.querySelector('.page.active').id;
+      if (activePage === 'page-dashboard') loadDashboard();
+      else if (activePage === 'page-webinars') loadWebinars();
+      else if (activePage === 'page-tasks') loadTasks();
+      else if (activePage === 'page-calendar') loadCalendar();
+      else if (activePage === 'page-archive') loadArchive();
+      else if (activePage === 'page-settings') loadSettings();
+      console.log('🔄 Автообновление данных...');
+    }, 30000);
+
+    document.getElementById('sync-icon').addEventListener('click', function() {
+      const activePage = document.querySelector('.page.active').id;
+      if (activePage === 'page-dashboard') loadDashboard();
+      else if (activePage === 'page-webinars') loadWebinars();
+      else if (activePage === 'page-tasks') loadTasks();
+      else if (activePage === 'page-calendar') loadCalendar();
+      else if (activePage === 'page-archive') loadArchive();
+      else if (activePage === 'page-settings') loadSettings();
+    });
+
+    // Закрытие FAB меню при клике вне его
+    document.addEventListener('click', function(e) {
+      const fabMenu = document.getElementById('fab-menu');
+      const fab = document.querySelector('.fab');
+      if (!fabMenu.contains(e.target) && !fab.contains(e.target)) {
+        closeFabMenu();
+      }
+    });
+
+    // ========================================================
+    // INIT
+    // ========================================================
+    console.log(' WebinarFlow загружен');
+    loadDashboard();
+  </script>
+
+</body>
+</html>
